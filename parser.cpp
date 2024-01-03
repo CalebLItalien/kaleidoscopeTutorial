@@ -4,11 +4,26 @@
 #include <utility>
 #include <map>
 #include <vector>
+#include <stdio.h>
 
 // A token buffer. Curtok is the current token
 static int CurTok;
+static std::map<char, int> BinopPrecedence;
+
 static int getNextToken() {
     return CurTok = gettok();
+}
+
+static std::unique_ptr<ExprAST> ParsePrimary();
+static std::unique_ptr<ExprAST> ParseBinOpRHS(int ExprPrec,
+                                                std::unique_ptr<ExprAST> LHS);
+
+// expression ::= primary binaoprhs
+static std::unique_ptr<ExprAST> ParseExpression() {
+    auto LHS = ParsePrimary();
+    if (!LHS)
+        return nullptr;
+    return ParseBinOpRHS(0, std::move(LHS));
 }
 
 // Logs errors in various AST types
@@ -89,8 +104,6 @@ static std::unique_ptr<ExprAST> ParsePrimary() {
     }
 }
 
-static std::map<char, int> BinopPrecedence;
-
 // Retrieves precedence of binary operation
 static int GetTokPrecedence() {
     if (!isascii(CurTok))
@@ -100,21 +113,6 @@ static int GetTokPrecedence() {
     return TokPrec;
 }
 
-int main() {
-    BinopPrecedence['<'] = 10;
-    BinopPrecedence['+'] = 20;
-    BinopPrecedence['-'] = 20;
-    BinopPrecedence['*'] = 40;
-    BinopPrecedence['/'] = 40;
-}
-
-// expression ::= primary binaoprhs
-static std::unique_ptr<ExprAST> ParseExpression() {
-    auto LHS = ParsePrimary();
-    if (!LHS)
-        return nullptr;
-    return ParseBinOpRHS(0, std::move(LHS));
-}
 
 // binorphs ::= ('+' primary)*
 static std::unique_ptr<ExprAST> ParseBinOpRHS(int ExprPrec,
@@ -184,6 +182,31 @@ static std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
     return nullptr;
 }
 
+/// Driver
+static void HandleDefinition() {
+    if (ParseDefinition()) {
+        fprintf(stderr, "Parsed a function defintiion.\n");
+    } else {
+        getNextToken();
+    }
+}
+
+static void HandleExtern() {
+    if (ParseExtern()) {
+        fprintf(stderr, "Parsed an extern\n");
+    } else {
+        getNextToken();
+    }
+} 
+
+static void HandleTopLevelExpression() {
+    if (ParseTopLevelExpr()) {
+        fprintf(stderr, "Parsed a top-level expr\n");
+    } else {
+        getNextToken();
+    }
+}
+
 // top ::= definition | external | expression | ';'
 static void MainLoop() {
     while (true) {
@@ -205,4 +228,16 @@ static void MainLoop() {
                 break;
         }
     }
+}
+
+int main() {
+    BinopPrecedence['<'] = 10;
+    BinopPrecedence['+'] = 20;
+    BinopPrecedence['-'] = 20;
+    BinopPrecedence['*'] = 40;
+
+    fprintf(stderr, "ready> ");
+    getNextToken();
+    MainLoop();
+    return 0;
 }

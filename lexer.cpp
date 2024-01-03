@@ -23,11 +23,11 @@ enum Token {
     // tok_error = -99,
 };
 
-static std::string IdentifierStr;
-static double NumVal;
+std::string IdentifierStr;
+double NumVal;
 
 // Reads from stdin and groups into tokens
-static int gettok() {
+int gettok() {
     static int LastChar = ' ';
 
     // skip whitespace

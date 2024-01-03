@@ -24,7 +24,7 @@ enum Token {
     tok_number = -5,
 
     // error
-    tok_error = -99,
+    // tok_error = -99,
 };
 
 extern std::string IdentifierStr;
